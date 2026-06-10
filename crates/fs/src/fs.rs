@@ -1081,7 +1081,14 @@ impl Fs for RealFs {
             pending_paths.clone(),
         ));
 
-        if let Err(e) = watcher.add(path) {
+        if let Err(e) = executor
+            .spawn({
+                let path = path.to_owned();
+                let watcher = watcher.clone();
+                async move { watcher.add(&path) }
+            })
+            .await
+        {
             log::warn!("Failed to watch {}:\n{e}", path.display());
         }
 
